@@ -16,6 +16,7 @@ builder.Services.Configure<FoundryOptions>(builder.Configuration.GetSection(Foun
 builder.Services.AddSingleton<PkceService>();
 builder.Services.AddSingleton<PkceStateStore>();
 builder.Services.AddSingleton<SalesforceTokenStore>();
+builder.Services.AddSingleton<McpSessionStore>();
 
 builder.Services.AddHttpClient<ISalesforceTokenClient, SalesforceTokenClient>();
 builder.Services.AddHttpClient<IMcpClient, HttpMcpClient>();
@@ -49,6 +50,7 @@ app.MapGet("/api/auth/salesforce/callback", async Task<Results<Ok<SalesforceAuth
     IOptions<SalesforceOptions> options,
     PkceStateStore stateStore,
     SalesforceTokenStore tokenStore,
+    McpSessionStore mcpSessionStore,
     ISalesforceTokenClient tokenClient,
     CancellationToken cancellationToken) =>
 {
@@ -64,6 +66,7 @@ app.MapGet("/api/auth/salesforce/callback", async Task<Results<Ok<SalesforceAuth
 
     var tokenResponse = await tokenClient.ExchangeCodeForTokenAsync(options.Value, code, codeVerifier, cancellationToken);
     tokenStore.Set(tokenResponse);
+    mcpSessionStore.Clear();
 
     return TypedResults.Ok(new SalesforceAuthCallbackResponse("Salesforce PKCE authentication completed."));
 });

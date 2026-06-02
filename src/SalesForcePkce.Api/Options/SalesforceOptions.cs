@@ -8,5 +8,5 @@ public sealed class SalesforceOptions
     public string TokenEndpoint { get; set; } = "https://login.salesforce.com/services/oauth2/token";
     public string ClientId { get; set; } = string.Empty;
     public string RedirectUri { get; set; } = "http://localhost:5000/api/auth/salesforce/callback";
-    public string Scope { get; set; } = "api refresh_token";
+    public string Scope { get; set; } = "mcp_api refresh_token";
 }

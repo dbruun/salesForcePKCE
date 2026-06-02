@@ -15,11 +15,11 @@ public sealed class AgentChatService(
 
         return await mcpClient.CallToolAsync(
             options.ServerUrl,
+            salesforceAccessToken,
             options.ChatToolName,
             new
             {
-                message = effectivePrompt,
-                accessToken = salesforceAccessToken
+                message = effectivePrompt
             },
             cancellationToken);
     }
