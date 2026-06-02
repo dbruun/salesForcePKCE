@@ -22,7 +22,7 @@ Set values in `src/SalesForcePkce.Api/appsettings.json`:
 - `Mcp.ChatToolName` (tool exposed by your MCP server)
 - `Foundry.Endpoint`, `Foundry.AgentName`, `Foundry.AgentVersion` (optional)
 
-For My Domain sandbox orgs, use the `/d/{mydomain}--{sandbox}/sandbox/{servername}` URL pattern for `Mcp.ServerUrl`.
+For My Domain sandbox orgs, use the Salesforce pattern `https://api.salesforce.com/platform/mcp/v1/d/{mydomain}--{sandbox}/sandbox/{servername}` for `Mcp.ServerUrl` (for example `.../d/acme--devsandbox/sandbox/platform/sobject-all`).
 
 ## Run
 

@@ -23,6 +23,8 @@ public sealed class FoundryAgentClient : IFoundryAgentClient
             string.IsNullOrWhiteSpace(settings.AgentName) ||
             string.IsNullOrWhiteSpace(settings.AgentVersion))
         {
+            _logger.LogInformation(
+                "Foundry prompt shaping is disabled because Endpoint/AgentName/AgentVersion is not fully configured.");
             return;
         }
 
