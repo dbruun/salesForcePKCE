@@ -1,6 +1,3 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.Extensions.Options;
 using SalesForcePkce.Api.Models;
@@ -20,7 +17,7 @@ builder.Services.AddSingleton<McpSessionStore>();
 
 builder.Services.AddHttpClient<ISalesforceTokenClient, SalesforceTokenClient>();
 builder.Services.AddHttpClient<IMcpClient, HttpMcpClient>();
-builder.Services.AddHttpClient<IFoundryAgentClient, FoundryAgentClient>();
+builder.Services.AddSingleton<IFoundryAgentClient, FoundryAgentClient>();
 builder.Services.AddScoped<IAgentChatService, AgentChatService>();
 
 builder.Services.AddEndpointsApiExplorer();

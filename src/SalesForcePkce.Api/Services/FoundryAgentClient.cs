@@ -1,53 +1,62 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
+using Azure.AI.Extensions.OpenAI;
+using Azure.AI.Projects;
+using Azure.AI.Projects.Agents;
+using Azure.Identity;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using OpenAI.Responses;
 using SalesForcePkce.Api.Options;
 
 namespace SalesForcePkce.Api.Services;
 
-public sealed class FoundryAgentClient(HttpClient httpClient, IOptions<FoundryOptions> options) : IFoundryAgentClient
+public sealed class FoundryAgentClient : IFoundryAgentClient
 {
-    public async Task<string> BuildAgentPromptAsync(string message, CancellationToken cancellationToken)
+    private readonly ILogger<FoundryAgentClient> _logger;
+    private readonly ProjectResponsesClient? _responseClient;
+
+    public FoundryAgentClient(IOptions<FoundryOptions> options, ILogger<FoundryAgentClient> logger)
     {
+        _logger = logger;
         var settings = options.Value;
 
-        if (string.IsNullOrWhiteSpace(settings.Endpoint) || string.IsNullOrWhiteSpace(settings.ApiKey))
+        if (string.IsNullOrWhiteSpace(settings.Endpoint) ||
+            string.IsNullOrWhiteSpace(settings.AgentName) ||
+            string.IsNullOrWhiteSpace(settings.AgentVersion))
+        {
+            _logger.LogInformation(
+                "Foundry prompt shaping is disabled because Endpoint/AgentName/AgentVersion is not fully configured.");
+            return;
+        }
+
+        var projectClient = new AIProjectClient(
+            endpoint: new Uri(settings.Endpoint),
+            tokenProvider: new DefaultAzureCredential());
+
+        AgentReference agentReference = new(name: settings.AgentName, version: settings.AgentVersion);
+        _responseClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(agentReference);
+    }
+
+    public async Task<string> BuildAgentPromptAsync(string message, CancellationToken cancellationToken)
+    {
+        if (_responseClient is null)
         {
             return message;
         }
 
-        var requestBody = new
+        try
         {
-            agent_id = settings.AgentId,
-            input = message
-        };
+            // OPENAI001 is required by the Azure AI Projects/OpenAI Responses preview API surface.
+#pragma warning disable OPENAI001
+            ResponseResult response = await _responseClient.CreateResponseAsync(message, cancellationToken: cancellationToken);
+#pragma warning restore OPENAI001
+            var output = response.GetOutputText();
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, settings.Endpoint)
+            return string.IsNullOrWhiteSpace(output) ? message : output;
+        }
+        catch (Exception ex)
         {
-            Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json")
-        };
-
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
-
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        if (!response.IsSuccessStatusCode)
-        {
+            _logger.LogWarning(ex, "Foundry agent prompt shaping failed. Falling back to original message.");
             return message;
         }
-
-        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-        if (string.IsNullOrWhiteSpace(responseContent))
-        {
-            return message;
-        }
-
-        using var jsonDoc = JsonDocument.Parse(responseContent);
-        if (jsonDoc.RootElement.TryGetProperty("output_text", out var outputText) && outputText.ValueKind == JsonValueKind.String)
-        {
-            return outputText.GetString() ?? message;
-        }
-
-        return message;
     }
 }
