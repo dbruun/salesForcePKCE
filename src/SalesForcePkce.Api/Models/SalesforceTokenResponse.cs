@@ -15,4 +15,7 @@ public sealed class SalesforceTokenResponse
 
     [JsonPropertyName("instance_url")]
     public string? InstanceUrl { get; set; }
+
+    [JsonPropertyName("expires_in")]
+    public int? ExpiresInSeconds { get; set; }
 }

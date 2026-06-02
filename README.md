@@ -13,7 +13,7 @@ Minimal .NET + web chat app to connect an agent workflow to Salesforce through a
 
 ## Configuration
 
-Set values in `/tmp/workspace/dbruun/salesForcePKCE/src/SalesForcePkce.Api/appsettings.json`:
+Set values in `src/SalesForcePkce.Api/appsettings.json`:
 
 - `Salesforce.ClientId`
 - `Salesforce.RedirectUri`
@@ -24,6 +24,5 @@ Set values in `/tmp/workspace/dbruun/salesForcePKCE/src/SalesForcePkce.Api/appse
 ## Run
 
 ```bash
-cd /tmp/workspace/dbruun/salesForcePKCE
-dotnet run --project /tmp/workspace/dbruun/salesForcePKCE/src/SalesForcePkce.Api/SalesForcePkce.Api.csproj
+dotnet run --project src/SalesForcePkce.Api/SalesForcePkce.Api.csproj
 ```
