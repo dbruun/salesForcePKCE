@@ -5,8 +5,19 @@ namespace SalesForcePkce.Api.Services;
 public sealed class SalesforceTokenStore
 {
     private readonly object _lock = new();
+    private readonly TimeProvider _timeProvider;
     private SalesforceTokenResponse? _token;
     private DateTimeOffset? _expiresAt;
+
+    public SalesforceTokenStore()
+        : this(TimeProvider.System)
+    {
+    }
+
+    public SalesforceTokenStore(TimeProvider timeProvider)
+    {
+        _timeProvider = timeProvider;
+    }
 
     public void Set(SalesforceTokenResponse token)
     {
@@ -14,7 +25,7 @@ public sealed class SalesforceTokenStore
         {
             _token = token;
             _expiresAt = token.ExpiresInSeconds is > 0
-                ? DateTimeOffset.UtcNow.AddSeconds(token.ExpiresInSeconds.Value)
+                ? _timeProvider.GetUtcNow().AddSeconds(token.ExpiresInSeconds.Value)
                 : null;
         }
     }
@@ -28,7 +39,7 @@ public sealed class SalesforceTokenStore
                 return null;
             }
 
-            if (_expiresAt is not null && DateTimeOffset.UtcNow >= _expiresAt.Value)
+            if (_expiresAt is not null && _timeProvider.GetUtcNow() >= _expiresAt.Value)
             {
                 _token = null;
                 _expiresAt = null;
