@@ -18,7 +18,7 @@ Set values in `src/SalesForcePkce.Api/appsettings.json`:
 - `Salesforce.ClientId`
 - `Salesforce.RedirectUri`
 - `Salesforce.AuthorizationEndpoint` and `Salesforce.TokenEndpoint` (defaults target sandbox: `test.salesforce.com`)
-- `Mcp.ServerUrl` (sandbox default: `https://api.salesforce.com/platform/mcp/v1/sandbox/platform/sobject-all`)
+- `Mcp.ServerUrl` (sandbox default: `https://api.salesforce.com/platform/mcp/v1/sandbox/platform/sobject-all`, where `platform/sobject-all` is the server name segment)
 - `Mcp.ChatToolName` (tool exposed by your MCP server)
 - `Foundry.Endpoint`, `Foundry.AgentName`, `Foundry.AgentVersion` (optional)
 
