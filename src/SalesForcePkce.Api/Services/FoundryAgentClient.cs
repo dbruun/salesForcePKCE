@@ -1,53 +1,45 @@
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
+using Azure.AI.Extensions.OpenAI;
+using Azure.AI.Projects;
+using Azure.AI.Projects.Agents;
+using Azure.Identity;
 using Microsoft.Extensions.Options;
+using OpenAI.Responses;
 using SalesForcePkce.Api.Options;
 
 namespace SalesForcePkce.Api.Services;
 
-public sealed class FoundryAgentClient(HttpClient httpClient, IOptions<FoundryOptions> options) : IFoundryAgentClient
+#pragma warning disable OPENAI001
+public sealed class FoundryAgentClient(IOptions<FoundryOptions> options) : IFoundryAgentClient
 {
     public async Task<string> BuildAgentPromptAsync(string message, CancellationToken cancellationToken)
     {
         var settings = options.Value;
 
-        if (string.IsNullOrWhiteSpace(settings.Endpoint) || string.IsNullOrWhiteSpace(settings.ApiKey))
+        if (string.IsNullOrWhiteSpace(settings.Endpoint) ||
+            string.IsNullOrWhiteSpace(settings.AgentName) ||
+            string.IsNullOrWhiteSpace(settings.AgentVersion))
         {
             return message;
         }
 
-        var requestBody = new
+        try
         {
-            agent_id = settings.AgentId,
-            input = message
-        };
+            var projectClient = new AIProjectClient(
+                endpoint: new Uri(settings.Endpoint),
+                tokenProvider: new DefaultAzureCredential());
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, settings.Endpoint)
-        {
-            Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json")
-        };
+            AgentReference agentReference = new(name: settings.AgentName, version: settings.AgentVersion);
+            ProjectResponsesClient responseClient = projectClient.OpenAI.GetProjectResponsesClientForAgent(agentReference);
 
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", settings.ApiKey);
+            ResponseResult response = await responseClient.CreateResponseAsync(message, cancellationToken: cancellationToken);
+            var output = response.GetOutputText();
 
-        using var response = await httpClient.SendAsync(request, cancellationToken);
-        if (!response.IsSuccessStatusCode)
+            return string.IsNullOrWhiteSpace(output) ? message : output;
+        }
+        catch
         {
             return message;
         }
-
-        var responseContent = await response.Content.ReadAsStringAsync(cancellationToken);
-        if (string.IsNullOrWhiteSpace(responseContent))
-        {
-            return message;
-        }
-
-        using var jsonDoc = JsonDocument.Parse(responseContent);
-        if (jsonDoc.RootElement.TryGetProperty("output_text", out var outputText) && outputText.ValueKind == JsonValueKind.String)
-        {
-            return outputText.GetString() ?? message;
-        }
-
-        return message;
     }
 }
+#pragma warning restore OPENAI001
