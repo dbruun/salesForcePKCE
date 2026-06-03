@@ -75,13 +75,16 @@ app.MapPost("/api/chat", async Task<Results<Ok<ChatResponse>, BadRequest<string>
     }
 
     var token = tokenStore.GetAccessToken();
-    if (string.IsNullOrWhiteSpace(token))
-    {
-        return TypedResults.BadRequest("Authenticate with Salesforce first using /api/auth/salesforce/start.");
-    }
 
-    var response = await chatService.SendAsync(request.Message, token, cancellationToken);
-    return TypedResults.Ok(new ChatResponse(response));
+    try
+    {
+        var response = await chatService.SendAsync(request.Message, token, cancellationToken);
+        return TypedResults.Ok(new ChatResponse(response));
+    }
+    catch (Exception ex)
+    {
+        return TypedResults.BadRequest($"Agent error: {ex.Message}");
+    }
 });
 
 app.Run();
